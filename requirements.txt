@@ -1,5 +1,5 @@
 # Core dependencies
-langchain==0.0.298
+langchain==0.3.13
 qdrant-client==1.6.4
 sentence-transformers==2.2.2
 huggingface-hub==0.16.4

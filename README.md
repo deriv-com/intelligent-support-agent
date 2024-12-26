@@ -1,12 +1,33 @@
 # intelligent-support-agent
 
-An intelligent support automation agent based system using Llama 2, Qdrant vector database, and LangChain. Provides context-aware responses by combining semantic search with conversation history. Built for customer support automation, locally deployable, and adaptable to various domains.
+An intelligent support automation agent-based system using Llama 2, Qdrant vector database, and LangChain. Provides context-aware responses by combining semantic search with conversation history. Built for customer support automation, locally deployable, and adaptable to various domains.
 
 ## Architecture
 
 ### Request Flow
 
-![Basic flow diagram](./assets/images/flow-diagram.png)
+```mermaid
+flowchart TB
+    Client[Client] --> |Query| API
+    API --> |Process Query| Support[Customer Support System]
+
+    subgraph Context Management
+        Support --> |Get Session Context| MCP[Model Context Protocol]
+        MCP --> |Retrieve History| Sessions[(Session Store)]
+        Support --> |Search Similar Docs| VDB[(Vector DB)]
+    end
+
+    subgraph Response Generation
+        Support --> |Context + History| Chain[LangChain]
+        Chain --> |Format Prompt| LLM[LLM]
+        LLM --> |Generated Response| Chain
+        Chain --> |Processed Response| Support
+    end
+
+    Support --> |Update Context| MCP
+    Support --> |Final Response| API
+    API --> |JSON Response| Client
+```
 
 ### Component Details
 
@@ -66,7 +87,7 @@ To make our system's architecture more approachable, we use an analogy (document
 - **Secretary (MCP)**: Remembers conversation history
 - **Manager (LangChain)**: Coordinates everyone's efforts
 
-This analogy helps both developers and AI models understand how different components interact and their specific roles in the system.
+This analogy helps developers and AI models understand how different components interact and their specific roles in the system.
 
 ### AI Model Context Files
 
@@ -84,7 +105,7 @@ The project includes two special files that help AI models (like LLMs) better un
    - Provides consistent metaphors for explaining functionality
    - Makes technical concepts more approachable in AI-generated responses
 
-> Note: These files serve as crucial context for both human developers and AI assistants, ensuring consistent understanding and communication about the system's architecture and purpose.
+> Note: These files serve as crucial context for human developers and AI assistants, ensuring consistent understanding and communication about the system's architecture and purpose.
 
 ## Project Structure
 
@@ -96,7 +117,7 @@ The project includes two special files that help AI models (like LLMs) better un
 │   ├── vectorstore/            # Vector database integration
 │   ├── mcp/                    # Model Context Protocol
 │   └── llm_chain/              # LangChain integration
-├── Dockerfile                  # Multi-stage build for main app
+├── Dockerfile                  # Multi-stage build for the main app
 ├── Dockerfile.ollama           # Custom Ollama build with network utilities
 ├── Dockerfile.qdrant           # Custom Qdrant build with health check support
 ├── docker-compose.yml          # Container orchestration
@@ -111,14 +132,14 @@ The project includes two special files that help AI models (like LLMs) better un
 1. **Main App Container (Dockerfile)**
    - Multi-stage build for optimized size
    - Includes curl for health checks
-   - Runs as non-root user for security
+   - Runs as a non-root user for security
 
 2. **Custom Ollama Container (Dockerfile.ollama)**
    - Based on ollama/ollama
    - Adds essential network utilities (curl, netcat, ping)
    - Required for proper health checks and diagnostics
    - Uses custom entrypoint to support both ollama and shell commands
-   - We use a custom Dockerfile for the Ollama container that includes additional packages (curl, netcat, iputils-ping). This is necessary to ensure proper health checks and network diagnostics within the container. The default Ollama image lacks these utilities, which can cause issues with Docker health checks and network troubleshooting (see [ollama/ollama#5389](https://github.com/ollama/ollama/issues/5389))
+   - We use a custom Dockerfile for the Ollama container, including additional packages (`curl`, `netcat`, `iputils-ping`). This is necessary to ensure proper health checks and network diagnostics within the container. The default Ollama image lacks these utilities, which can cause issues with Docker health checks and network troubleshooting (see [ollama/ollama#5389](https://github.com/ollama/ollama/issues/5389))
 
 3. **Custom Qdrant Container (Dockerfile.qdrant)**
    - Based on qdrant/qdrant
@@ -282,7 +303,7 @@ The system maintains conversation history using session IDs:
        "session_id": "user123"
      }'
 
-   # Follow-up about specific issue
+   # Follow-up about a specific issue
    curl -X POST http://localhost:8000/query \
      -H "Content-Type: application/json" \
      -d '{
@@ -309,7 +330,7 @@ The system maintains conversation history using session IDs:
        "session_id": "user456"
      }'
 
-   # Ask about verification process
+   # Ask about the verification process
    curl -X POST http://localhost:8000/query \
      -H "Content-Type: application/json" \
      -d '{
@@ -472,16 +493,6 @@ The project includes a comprehensive test suite using pytest, organized for clar
    - Consistent test environment across systems
    - Isolated from development dependencies
    - Reproducible test execution
-
-## Best Practices
-
-- Use semantic versioning for releases
-- Follow PEP 8 style guide
-- Write comprehensive tests with good coverage
-- Document code changes
-- Monitor system health
-- Regular security updates
-- Backup vector database regularly
 
 ## Contributing
 

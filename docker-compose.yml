@@ -1,0 +1,143 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - qdrant
+      - ollama
+    networks:
+      - support_network
+    volumes:
+      - ./src:/app/src
+      - app_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  qdrant:
+    build:
+      context: .
+      dockerfile: Dockerfile.qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    networks:
+      - support_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/collections"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    environment:
+      - QDRANT_ALLOW_RECOVERY=true
+      - QDRANT_FORCE_BACKUP=true
+    restart: unless-stopped
+
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - support_network
+    # Optional GPU support - uncomment if NVIDIA GPU is available
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  model-init:
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=ollama
+    command: sh -c "sleep 5 && OLLAMA_HOST=ollama ollama pull llama2"
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - support_network
+
+  init-data:
+    build: .
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+      model-init:
+        condition: service_completed_successfully
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+      - app_data:/app/data
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - OLLAMA_BASE_URL=http://ollama:11434
+    networks:
+      - support_network
+    command: >
+      sh -c "
+        python scripts/populate_data.py &&
+        python scripts/test_queries.py
+      "
+    profiles:
+      - init
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+    environment:
+      - PYTHONPATH=/app
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - OLLAMA_BASE_URL=http://ollama:11434
+    networks:
+      - support_network
+    profiles:
+      - test
+
+volumes:
+  qdrant_storage:
+    driver: local
+  ollama_models:
+    driver: local
+  app_data:
+    driver: local
+
+networks:
+  support_network:
+    driver: bridge

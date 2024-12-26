@@ -1,0 +1,20 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Copy requirements files
+COPY requirements.txt requirements-test.txt ./
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -r requirements-test.txt
+
+# Copy source code and tests
+COPY src/ ./src/
+COPY tests/ ./tests/
+
+# Set Python path
+ENV PYTHONPATH=/app
+
+# Run tests with coverage
+CMD ["pytest", "-v", "--cov=src", "--cov-report=term-missing", "tests/"]

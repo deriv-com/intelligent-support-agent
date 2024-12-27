@@ -1,6 +1,7 @@
-from langchain.llms import Ollama
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from langchain_community.llms import Ollama
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 from typing import List, Dict
 import logging
 from ..config import Config
@@ -34,7 +35,9 @@ Important: Make sure to include the relevant help.deriv.com/payments URL from th
 Assistant Response:"""
             )
 
-            self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
+            self.chain = (
+                RunnablePassthrough() | self.prompt | self.llm | StrOutputParser()
+            )
             logger.info(f"Initialized PaymentSupportChain with model {config.LLM_MODEL}")
         except Exception as e:
             logger.error(f"Failed to initialize PaymentSupportChain: {str(e)}")
@@ -48,16 +51,14 @@ Assistant Response:"""
     ) -> str:
         try:
             logger.info(f"Generating response for question: {question}")
-            context_str = "\n".join([doc["content"] for doc in context])
-            history_str = "\n".join([
-                f"{msg.role}: {msg.content}" for msg in conversation_history
-            ])
+            context_str = self._format_context(context)
+            history_str = self._format_history(conversation_history)
 
-            response = self.chain.run(
-                context=context_str,
-                conversation_history=history_str,
-                question=question
-            )
+            response = self.chain.invoke({
+                "context": context_str,
+                "conversation_history": history_str,
+                "question": question
+            })
 
             logger.info("Successfully generated response")
             return response

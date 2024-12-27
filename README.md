@@ -149,7 +149,7 @@ The project includes two special files that help AI models (like LLMs) better un
 ## Prerequisites
 
 - Docker
-- Python 3.9+
+- Python 3.11+
 - NVIDIA GPU (optional)
   - For GPU support:
     1. Install NVIDIA Container Toolkit

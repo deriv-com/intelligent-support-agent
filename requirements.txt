@@ -17,7 +17,7 @@ pydantic>=2.4.2,<3.0.0
 
 # Utilities
 numpy==1.26.4
-requests==2.31.0
+requests==2.32.2
 python-multipart==0.0.9
 typing-extensions==4.10.0
 colorama==0.4.6

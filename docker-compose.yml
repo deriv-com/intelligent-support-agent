@@ -55,14 +55,16 @@ services:
       - ollama_models:/root/.ollama
     networks:
       - support_network
-    # Optional GPU support - uncomment if NVIDIA GPU is available
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1    # g4dn.xlarge has 1 GPU
+              capabilities: [compute, utility]    # Specific capabilities for T4 GPU
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]

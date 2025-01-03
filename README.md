@@ -156,6 +156,69 @@ The project includes two special files that help AI models (like LLMs) better un
     2. Uncomment GPU configuration in docker-compose.yml
   - System will automatically use CPU if GPU is not available
 
+## NVIDIA Setup Guide
+
+If you plan to use GPU acceleration, follow these steps for Ubuntu/Debian systems:
+
+1. **Verify NVIDIA GPU**
+```bash
+# Check if NVIDIA GPU is detected
+lspci | grep -i nvidia
+```
+
+2. **Install NVIDIA Driver**
+```bash
+# Check if NVIDIA driver is already installed
+nvidia-smi
+
+# If not installed:
+sudo apt-get update
+sudo apt-get install -y linux-headers-$(uname -r)
+sudo apt-get install -y nvidia-driver-535
+
+# Reboot system
+sudo reboot
+
+# After reboot, verify driver installation
+nvidia-smi
+```
+
+3. **Install NVIDIA Container Toolkit**
+```bash
+# Add NVIDIA package repository and GPG key
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+
+curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+
+# Install the toolkit
+sudo apt-get update
+sudo apt-get install -y nvidia-container-toolkit
+
+# Configure Docker runtime
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+```
+
+4. **Verify Installation**
+```bash
+# Test NVIDIA Container Toolkit
+sudo docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
+```
+
+Note: These instructions are for standard NVIDIA driver installation. For cloud-specific setups (AWS, GCP, Azure), refer to your cloud provider's documentation.
+
+Official Documentation References:
+- [NVIDIA Container Toolkit Installation Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+- [NVIDIA Docker Installation Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html)
+- [NVIDIA Driver Documentation](https://docs.nvidia.com/datacenter/tesla/tesla-installation-notes/index.html)
+
+Common Issues:
+- If `nvidia-smi` fails after installation, try rebooting the system
+- If Docker can't access GPU, ensure Docker service was restarted after configuration
+- For permission issues, ensure your user is in the `docker` group
+
 ## Setup
 
 1. Clone the repository:

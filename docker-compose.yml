@@ -60,8 +60,8 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: 1    # g4dn.xlarge has 1 GPU
-              capabilities: [compute, utility]    # Specific capabilities for T4 GPU
+              count: 1
+              capabilities: [compute, utility]
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility

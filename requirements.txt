@@ -5,7 +5,7 @@ langchain-community>=0.0.28,<0.1.0
 langchain-core>=0.1.31,<0.2.0
 qdrant-client==1.9.0
 sentence-transformers==2.5.1
-transformers==4.38.1
+transformers==4.48.0
 huggingface-hub==0.20.3
 torch==2.2.1+cpu
 python-dotenv==1.0.1
